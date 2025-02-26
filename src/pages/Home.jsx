@@ -5,12 +5,12 @@ import Dashboard from "./Dashboard";
 
 export default function Home() {
     return (
-        <div dir="rtl">
+        <div>
             <Header />
             <Container fluid>
                 <Row>
                     {/* <SideNavbar xs={3} /> */}
-                    <Col xs={9} md={10} className="offset-md-2">
+                    <Col xs={11} md={10} className="offset-md-2">
                         <div className="p-3">
                             {/* Основное содержимое */}
                             <h1>Welcome to MIKUDERECH</h1>
