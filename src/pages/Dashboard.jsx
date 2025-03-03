@@ -1,5 +1,6 @@
 import { Row, Col, Container, Card } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import Charts from '../components/Charts';
+import planed_act from '../../json/planed_act.json';
 
 const data = [
     { name: 'Jan', uv: 4000, pv: 2400, amt: 2400 },
@@ -10,6 +11,7 @@ const data = [
     { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
     { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
 ];
+console.log(planed_act);
 
 const pieData = [
     { name: 'Group A', value: 400 },
@@ -20,44 +22,14 @@ const pieData = [
 
 export default function Dashboard() {
     return (
-        <Container fluid className="p-3">
+        <Container fluid>
             <Row>
-                <Col md={6} className="mb-4">
-                    <Card>
-                        <Card.Header>Performance Percentage</Card.Header>
-                        <Card.Body>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={data}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis />
-                                    <Tooltip />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="uv" stroke="#8884d8" />
-                                    <Line type="monotone" dataKey="pv" stroke="#82ca9d" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={6} className="mb-4">
-                    <Card>
-                        <Card.Header>Sales by Date</Card.Header>
-                        <Card.Body>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
-                                        {pieData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index % 2 ? '#8884d8' : '#82ca9d'} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </Card.Body>
-                    </Card>
-                </Col>
+                <Col x={6}><Charts data={planed_act} /></Col>
+                <Col x={6}><Charts data={data} /></Col>
+            </Row>
+            <Row>
+                <Col x={6}><Charts data={data} /></Col>
+                <Col x={6}><Charts data={data} /></Col>
             </Row>
         </Container>
     );

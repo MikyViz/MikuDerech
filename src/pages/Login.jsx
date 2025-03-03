@@ -1,8 +1,8 @@
 import { Container, Card, Button, Form, Col, Row } from 'react-bootstrap/';
-import { Link, useNavigate } from 'react-router-dom';
+// import { Link, useNavigate } from 'react-router-dom';
 
 export default function Login() {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     return (
         <Container fluid className="vh-100 d-flex justify-content-center align-items-center" style={{ backgroundColor: 'var(--background-color)' }}>
@@ -26,7 +26,7 @@ export default function Login() {
                             </Col>
                         </Form.Group>
                         <div className="d-flex justify-content-center">
-                            <Button style={{backgroundColor:'var(--btn-color)', borderColor:'var(--btn-color)'}} href='/home'>!יאללא</Button>
+                            <Button style={{backgroundColor:'var(--btn-color)', borderColor:'var(--btn-color)'}} href='/home/dashboard'>!יאללא</Button>
                         </div>
                         </Form>
                 </Card.Body>
