@@ -1,65 +1,125 @@
 import { useState } from 'react';
-import { Row, Button, Container, Card } from 'react-bootstrap';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Row, Button, Container, Card, Dropdown, } from 'react-bootstrap';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, Rectangle } from 'recharts';
 
 export default function Charts(props) {
 
     const [type, setType] = useState("linear");
     const [pieData, setPieData] = useState([]);
     const colors = [
-    '#573d64',
-    '#643d4c',
-    '#3d4364',
-    '#3d6462',
-    '#463d64',
-    '#3d643d',
-    '#4e643d',
-    '#3d6454',
-    '#64513d',
-    '#5d643d',
-]
+        '#573d64',
+        '#643d4c',
+        '#3d4364',
+        '#3d6462',
+        '#463d64',
+        '#3d643d',
+        '#4e643d',
+        '#3d6454',
+        '#64513d',
+        '#5d643d',
+    ]
     const keys = Object.keys(props.data[0]).filter(key => key !== 'time' && key !== 'date');
+    const formatData = props.data.map((item, i) => {
+        const date = new Date(item.time || item.date);
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        return { ...item, date: `${year}-${month < 10 ? '0' + month : month}` };
+    })
+    console.log(formatData);
 
-    const typeHandler = () => {
-        setType((prev) => {
-            if (prev === 'linear') {
-                const newPieData = keys.map((key, i) => ({
-                    name: key,
-                    value: props.data.reduce((acc, item) => acc + item[key], 0),
-                    color: colors[i]
-                }));
-                setPieData(newPieData);
-                return 'donat';
-            } else {
-                return 'linear';
-            }
-        });
+    const typeHandler = (newType) => {
+
+        if (newType === "donat") {
+            const newPieData = keys.map((key, i) => ({
+                name: key,
+                value: props.data.reduce((acc, item) => acc + item[key], 0),
+                color: colors[i]
+            }));
+            setPieData(newPieData);
+        }
+        setType(newType);
     };
+    const chartRender = () => {
+        switch (type) {
+            case 'linear':
+                return (
+                    <LineChart data={formatData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={keys.includes('time') ? 'time' : 'date'} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        {keys.map((key, i) => (
+                            <Line key={key} type="monotone" dataKey={key} stroke={colors[i]} />))}
+                    </LineChart>)
+            // break;
+            case 'donat':
+                return (
+                    <PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
+                            {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
+                )
+            // break;
+            case 'area':
+                return (
+                    <AreaChart data={formatData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={keys.includes('time') ? 'time' : 'date'} />
+                        <YAxis />
+                        <Tooltip />
+                        {keys.map((key, i) => (
+                            <Area type="monotone" dataKey={key} stackId={i} stroke={colors[i]} fill={colors[colors.length - i]} />
+                        ))
+                        }
+                    </AreaChart>
+                )
+            case 'bar':
+                return (
+                    <BarChart data={formatData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={keys.includes('time') ? 'time' : 'date'} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        {keys.map((key, i) => (
+                            <Bar key={key} dataKey={key} stroke={colors[i]} fill={colors[colors.length - i]} activeBar={<Rectangle fill={colors[colors.length - i]} stroke={colors[i]} />} />
+                        ))
+                        }
+                    </BarChart>
+                )
+            // break;
+
+            default:
+                return null;
+        }
+    }
     return (
         <Container fluid className="p-3">
             <Card>
-                <Card.Header>Performance Percentage <Button className='btn-secondary btn-sm' onClick={typeHandler}>switch</Button></Card.Header>
+                <Card.Header className='fs-5'>{props.title}
+                    <Dropdown onSelect={typeHandler}>
+                        <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                            בחר סוג של גרף
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu>
+                            {props.types ? props.types.map((type, i) => (<Dropdown.Item key={i} eventKey={type}>{type}</Dropdown.Item>))
+                                :
+                                <Dropdown.Item eventKey={'linear'}>linear</Dropdown.Item>
+                            }
+                        </Dropdown.Menu>
+                    </Dropdown>
+                </Card.Header>
                 <Card.Body>
                     <ResponsiveContainer width="100%" height={300}>
-                        {type === 'linear' ? <LineChart data={props.data}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="time" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            {keys.map((key, i) => (
-                                <Line key={key} type="monotone" dataKey={key} stroke={colors[i]} />
-                            ))}
-                        </LineChart> :
-                            <PieChart>
-                                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8">
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </PieChart>
+                        {
+                            chartRender()
                         }
                     </ResponsiveContainer>
                 </Card.Body>

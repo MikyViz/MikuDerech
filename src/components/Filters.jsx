@@ -1,9 +1,9 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { GlobalStateContext } from '../GlobalStateProvider';
 
 function Filters() {
-    const { globalState, setGlobalState} = useContext(GlobalStateContext);
+    const { globalState, setGlobalState } = useContext(GlobalStateContext);
 
     const [filters, setFilters] = useState({
         operator: '',
@@ -12,7 +12,8 @@ function Filters() {
         line: '',
         lineType: '',
         lineGroup: '',
-        date: ''
+        StartDate: '',
+        EndDate: ''
     });
 
     const handleFiltersChange = (e) => {
@@ -25,16 +26,26 @@ function Filters() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (Object.values(filters).every(value => value === '')) {
+            console.warn('Форма пуста, фильтры не добавлены');
+            return;
+        }
         setGlobalState(prev => ({
             ...prev,
             filters: [
-              ...prev.filters,
-              filters
-            ]
-          }));
-          
+                ...prev.filters,
+                filters
+            ],
+            currentFilter: filters
+        }));
+
         console.log('Фильтры:', filters);
+        console.log('currentFilter:', filters);
     };
+
+    useEffect(() => {
+        console.log('Обновленный currentFilter:', globalState.currentFilter);
+    }, [globalState.currentFilter]);
 
     return (
         <Form onSubmit={handleSubmit}>
@@ -98,13 +109,22 @@ function Filters() {
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} controlId="date">
-                    <Form.Label>תאריך:</Form.Label>
-                    <Form.Control type="date" value={filters.date} onChange={handleFiltersChange} />
+                <Form.Group as={Col} controlId="StartDate">
+                    <Form.Label>מתאריך:</Form.Label>
+                    <Form.Control type="date" value={filters.StartDate} onChange={handleFiltersChange} />
+                </Form.Group>
+                <Form.Group as={Col} controlId="EndDate">
+                    <Form.Label>עד תאריך:</Form.Label>
+                    <Form.Control type="date" value={filters.EndDate} onChange={handleFiltersChange} />
                 </Form.Group>
 
                 <Col>
-                    <Button variant="primary" type="submit" className="mt-4">
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        className="mt-4"
+                        disabled={Object.values(filters).every(value => value === '')}
+                    >
                         סנן
                     </Button>
                 </Col>

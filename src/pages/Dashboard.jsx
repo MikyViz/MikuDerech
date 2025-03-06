@@ -1,6 +1,9 @@
 import { Row, Col, Container, Card } from 'react-bootstrap';
 import Charts from '../components/Charts';
 import planed_act from '../../json/planed_act.json';
+import axios from 'axios';
+import { useEffect, useContext, useState } from 'react';
+import { GlobalStateContext } from '../GlobalStateProvider';
 
 const data = [
     { name: 'Jan', uv: 4000, pv: 2400, amt: 2400 },
@@ -11,20 +14,91 @@ const data = [
     { name: 'Jun', uv: 2390, pv: 3800, amt: 2500 },
     { name: 'Jul', uv: 3490, pv: 4300, amt: 2100 },
 ];
-console.log(planed_act);
 
-const pieData = [
-    { name: 'Group A', value: 400 },
-    { name: 'Group B', value: 300 },
-    { name: 'Group C', value: 300 },
-    { name: 'Group D', value: 200 },
-];
 
 export default function Dashboard() {
+    const url = import.meta.env.VITE_URL;
+    const userId = import.meta.env.VITE_USERID;
+    const user = import.meta.env.VITE_USER;
+    const password = import.meta.env.VITE_PASSWORD;
+    const { globalState, setGlobalState } = useContext(GlobalStateContext);
+    const currentDate = new Date(); // Текущая дата
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
+
+    useEffect(() => {
+        const filterOptions = async () => {
+            const reqData = {
+                UserId: userId,
+                SelectChoice: 'Cities'
+            };
+    
+            const body = {
+                userName: user,
+                password: password,
+                data: reqData
+            };
+    
+            console.log('URL:', `${url}/UserChoice`);
+            console.log('Тело запроса:', body);
+    
+            try {
+                const response = await axios.post(`${url}/UserChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                console.log('Ответ от API:', response.data);
+            } catch (error) {
+                console.error('Ошибка при запросе:', error.response?.data || error.message);
+            }
+        };
+    
+        filterOptions();
+    }, [url, userId, user, password]);
+    
+    const fetchTripsPlannedVSPerformed = async () => {
+        const url = 'https://mdapi.kolkasher.co.il/api/md/TripsPlannedVSPerformed';
+        console.log('Запрос на:', url);
+        const reqData = {
+            UserId: userId,
+            StartDate: globalState.currentFilter.StartDate,
+            EndDate: globalState.currentFilter.currentDate,
+            City: globalState.currentFilter.City
+        };
+        const body = {
+            userName: user,
+            password: password,
+            data: reqData
+        };
+
+        try {
+            const response = await axios.post(url, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+
+            const result = response.data;
+            console.log(result);
+
+            if (result.result === 0) {
+                console.log('Операция выполнена успешно:', result.ResData);
+            } else {
+                console.error('💩Ошибка выполнения операции:', result.Msg);
+            }
+        } catch (error) {
+            console.error('💩Произошла ошибка при выполнении запроса:', error);
+        }
+    };
+
+    // Вызов функции
+    // fetchTripsPlannedVSPerformed();
     return (
         <Container fluid>
             <Row>
-                <Col x={6}><Charts data={planed_act} /></Col>
+                <Col x={6}><Charts data={planed_act} types={['linear', 'donat', 'area', 'bar']} title='תכנון / ביצוע(זמן אמת)' /></Col>
                 <Col x={6}><Charts data={data} /></Col>
             </Row>
             <Row>
