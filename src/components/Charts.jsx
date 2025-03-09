@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Row, Button, Container, Card, Dropdown, } from 'react-bootstrap';
+import { Row, Col, Button, Container, Card, Dropdown, } from 'react-bootstrap';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, Rectangle } from 'recharts';
+import * as XLSX from 'xlsx';
 
 export default function Charts(props) {
 
@@ -39,6 +40,14 @@ export default function Charts(props) {
         }
         setType(newType);
     };
+    // Экспорт данных в Excel
+    const exportToExcel = () => {
+        const worksheet = XLSX.utils.json_to_sheet(formatData); // Конвертируем данные в лист Excel
+        const workbook = XLSX.utils.book_new(); // Создаем новую книгу Excel
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data"); // Добавляем лист в книгу
+        XLSX.writeFile(workbook, "chart_data.xlsx"); // Скачиваем файл
+    };
+
     const chartRender = () => {
         switch (type) {
             case 'linear':
@@ -94,7 +103,19 @@ export default function Charts(props) {
                     </BarChart>
                 )
             // break;
-
+            case 'horizontal-bar':
+                return (
+                    <BarChart data={formatData} layout="vertical"> {/* Горизонтальная ориентация */}
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis type="number" />
+                        <YAxis dataKey={keys.includes('time') ? 'time' : 'date'} type="category" />
+                        <Tooltip />
+                        <Legend />
+                        {keys.map((key, i) => (
+                            <Bar key={key} dataKey={key} stroke={colors[i]} fill={colors[colors.length - i]} />
+                        ))}
+                    </BarChart>
+                );
             default:
                 return null;
         }
@@ -102,19 +123,31 @@ export default function Charts(props) {
     return (
         <Container fluid className="p-3">
             <Card>
-                <Card.Header className='fs-5'>{props.title}
-                    <Dropdown onSelect={typeHandler}>
-                        <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-                            בחר סוג של גרף
-                        </Dropdown.Toggle>
+                <Card.Header className='fs-5'>
+                            {props.title}
+                            <hr/>
+                    <Row>
+                        <Col>
+                            <Dropdown onSelect={typeHandler}>
+                                <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+                                    בחר סוג של גרף
+                                </Dropdown.Toggle>
 
-                        <Dropdown.Menu>
-                            {props.types ? props.types.map((type, i) => (<Dropdown.Item key={i} eventKey={type}>{type}</Dropdown.Item>))
-                                :
-                                <Dropdown.Item eventKey={'linear'}>linear</Dropdown.Item>
-                            }
-                        </Dropdown.Menu>
-                    </Dropdown>
+                                <Dropdown.Menu>
+                                    {props.types ? props.types.map((type, i) => (<Dropdown.Item key={i} eventKey={type}>{type}</Dropdown.Item>))
+                                        :
+                                        <Dropdown.Item eventKey={'linear'}>linear</Dropdown.Item>
+                                    }
+                                </Dropdown.Menu>
+                            </Dropdown>
+                        </Col>
+                        <Col>
+                            <Button variant="success" onClick={exportToExcel} className="ms-3">
+                                הורדה ב- Excel
+                            </Button>
+                        </Col>
+                    </Row>
+
                 </Card.Header>
                 <Card.Body>
                     <ResponsiveContainer width="100%" height={300}>

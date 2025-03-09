@@ -1,19 +1,29 @@
 import React, { useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { GlobalStateContext } from '../GlobalStateProvider';
 
 function Filters() {
     const { globalState, setGlobalState } = useContext(GlobalStateContext);
+    const url = import.meta.env.VITE_URL;
+    const userId = import.meta.env.VITE_USERID;
+    const user = import.meta.env.VITE_USER;
+    const password = import.meta.env.VITE_PASSWORD;
+    const currentDate = new Date(); // Текущая дата
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(currentDate.getMonth() - 3); // Текущая дата минус 3 месяца
+    const [filterOptions, setFilterOptions] = useState({});
+
 
     const [filters, setFilters] = useState({
-        operator: '',
-        cluster: '',
-        city: '',
-        line: '',
-        lineType: '',
-        lineGroup: '',
-        StartDate: '',
-        EndDate: ''
+        Agency: '',
+        Cluster: '',
+        SubCluster: '',
+        City: '',
+        LineID: '',
+        LineType: '',
+        StartDate: threeMonthsAgo.toISOString().split('T')[0],
+        EndDate: currentDate.toISOString().split('T')[0]
     });
 
     const handleFiltersChange = (e) => {
@@ -44,59 +54,153 @@ function Filters() {
     };
 
     useEffect(() => {
-        console.log('Обновленный currentFilter:', globalState.currentFilter);
-    }, [globalState.currentFilter]);
+        const getFilterOptions = async () => {
+            const reqData = {
+                UserId: userId,
+                SelectChoice: 'Cities'
+            };
+
+            const body = {
+                userName: user,
+                password: password,
+                data: reqData
+            };
+
+            console.log('URL:', `${url}/UserChoice`);
+            console.log('Тело запроса:', body);
+
+            try {
+                const response_cities = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    City: response_cities.data.ResData
+                }));
+
+                reqData.SelectChoice = 'Agency';
+                const response_agency = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    Agency: response_agency.data.ResData
+                }));
+
+                reqData.SelectChoice = 'Cluster';
+                const response_cluster = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    Cluster: response_cluster.data.ResData
+                }));
+
+                reqData.SelectChoice = 'SubCluster';
+                const response_subcluster = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    SubCluster: response_subcluster.data.ResData
+                }));
+
+                reqData.SelectChoice = 'LineType';
+                const response_linetype = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    LineType: response_linetype.data.ResData
+                }));
+
+                reqData.SelectChoice = 'LineID';
+                const response_lineid = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    LineID: response_lineid.data.ResData
+                }));
+            } catch (error) {
+                console.error('Ошибка при запросе:', error.response?.data || error.message);
+            }
+        };
+
+        getFilterOptions();
+        console.log('filterOptions:', filterOptions);
+
+    }, [url, userId, user, password]);
 
     return (
         <Form onSubmit={handleSubmit}>
             <Row className="align-items-center">
-                <Form.Group as={Col} controlId="operator">
+                <Form.Group as={Col} controlId="Agency">
                     <Form.Label>מפעיל:</Form.Label>
-                    <Form.Select value={filters.operator} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.Agency} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="אגד">אגד</option>
-                        <option value="דן">דן</option>
-                        <option value="קווים">קווים</option>
+                        {filterOptions.Agency?.map((option, index) => (
+                            <option key={index} value={option}>{option.agency_name}</option>))}
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} controlId="cluster">
+                <Form.Group as={Col} controlId="Cluster">
                     <Form.Label>אשכול (אזורים):</Form.Label>
-                    <Form.Select value={filters.cluster} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.Cluster} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="1">אשכול 1</option>
-                        <option value="2">אשכול 2</option>
-                        <option value="3">אשכול 3</option>
-                        <option value="4">אשכול 4</option>
+                        {filterOptions.Cluster?.map((option, index) => (
+                            <option key={index} value={option}>{option.ClusterName}</option>))}
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} controlId="city">
+                <Form.Group as={Col} controlId="City">
                     <Form.Label>עיר:</Form.Label>
-                    <Form.Select value={filters.city} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.City} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="tel-aviv">תל אביב</option>
-                        <option value="jerusalem">ירושלים</option>
-                        <option value="haifa">חיפה</option>
+                        {filterOptions.City?.map((option, index) => (
+                            <option key={index} value={option}>{option.CityName}</option>))}
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} controlId="line">
+                <Form.Group as={Col} controlId="LineID">
                     <Form.Label>קו:</Form.Label>
-                    <Form.Select value={filters.line} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.LineID} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="1">קו 1</option>
-                        <option value="2">קו 2</option>
-                        <option value="3">קו 3</option>
+                        {filterOptions.LineID?.map((option, index) => (
+                            <option key={index} value={option}>{option.RouteNumber}</option>))}
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} controlId="lineType">
+                <Form.Group as={Col} controlId="LineType">
                     <Form.Label>סוג קו:</Form.Label>
-                    <Form.Select value={filters.lineType} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.LineType} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="regular">רגיל</option>
-                        <option value="express">מהיר</option>
+                        {/* 
+                        סוג קו:  
+                        1 –  עירוני  
+                        2 – אזורי  
+                        3 – בינעירוני 
+                        */}
+                        {filterOptions.LineType?.map((option, index) => (
+                            <option key={index} value={option}>{option.LineType}</option>))}
                     </Form.Select>
                 </Form.Group>
 

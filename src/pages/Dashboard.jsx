@@ -22,40 +22,7 @@ export default function Dashboard() {
     const user = import.meta.env.VITE_USER;
     const password = import.meta.env.VITE_PASSWORD;
     const { globalState, setGlobalState } = useContext(GlobalStateContext);
-    const currentDate = new Date(); // Текущая дата
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
 
-    useEffect(() => {
-        const filterOptions = async () => {
-            const reqData = {
-                UserId: userId,
-                SelectChoice: 'Cities'
-            };
-    
-            const body = {
-                userName: user,
-                password: password,
-                data: reqData
-            };
-    
-            console.log('URL:', `${url}/UserChoice`);
-            console.log('Тело запроса:', body);
-    
-            try {
-                const response = await axios.post(`${url}/UserChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                console.log('Ответ от API:', response.data);
-            } catch (error) {
-                console.error('Ошибка при запросе:', error.response?.data || error.message);
-            }
-        };
-    
-        filterOptions();
-    }, [url, userId, user, password]);
     
     const fetchTripsPlannedVSPerformed = async () => {
         const url = 'https://mdapi.kolkasher.co.il/api/md/TripsPlannedVSPerformed';
@@ -98,7 +65,7 @@ export default function Dashboard() {
     return (
         <Container fluid>
             <Row>
-                <Col x={6}><Charts data={planed_act} types={['linear', 'donat', 'area', 'bar']} title='תכנון / ביצוע(זמן אמת)' /></Col>
+                <Col x={6}><Charts data={planed_act} types={['linear', 'donat', 'area', 'bar', 'horizontal-bar']} title='תכנון / ביצוע(זמן אמת)' /></Col>
                 <Col x={6}><Charts data={data} /></Col>
             </Row>
             <Row>
