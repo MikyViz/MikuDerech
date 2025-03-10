@@ -22,6 +22,7 @@ function Filters() {
         City: '',
         LineID: '',
         LineType: '',
+        linegroup: '',
         StartDate: threeMonthsAgo.toISOString().split('T')[0],
         EndDate: currentDate.toISOString().split('T')[0]
     });
@@ -140,6 +141,18 @@ function Filters() {
                     ...prev,
                     LineID: response_lineid.data.ResData
                 }));
+
+                reqData.SelectChoice = 'linegroup';
+                const response_linegroup = await axios.post(`${url}/UsersChoice`, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': '*/*'
+                    }
+                });
+                setFilterOptions((prev) => ({
+                    ...prev,
+                    linegroup: response_linegroup.data.ResData
+                }));
             } catch (error) {
                 console.error('Ошибка при запросе:', error.response?.data || error.message);
             }
@@ -206,10 +219,10 @@ function Filters() {
 
                 <Form.Group as={Col} controlId="lineGroup">
                     <Form.Label>קבוצת קווים:</Form.Label>
-                    <Form.Select value={filters.lineGroup} onChange={handleFiltersChange}>
+                    <Form.Select value={filters.linegroup} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
-                        <option value="group-1">קבוצה 1</option>
-                        <option value="group-2">קבוצה 2</option>
+                        {filterOptions.linegroup?.map((option, index) => (
+                            <option key={index} value={option}>{option.descrip}</option>))}
                     </Form.Select>
                 </Form.Group>
 
