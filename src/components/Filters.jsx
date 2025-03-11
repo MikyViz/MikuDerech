@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Form, Row, Col, Button } from 'react-bootstrap';
 import { GlobalStateContext } from '../GlobalStateProvider';
@@ -13,7 +13,16 @@ function Filters() {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(currentDate.getMonth() - 3); // Текущая дата минус 3 месяца
     const [filterOptions, setFilterOptions] = useState({});
+    const reqData = {
+        UserId: userId,
+        SelectChoice: ''
+    };
 
+    const body = {
+        userName: user,
+        password: password,
+        data: reqData
+    };
 
     const [filters, setFilters] = useState({
         Agency: '',
@@ -29,6 +38,60 @@ function Filters() {
 
     const handleFiltersChange = (e) => {
         const { id, value } = e.target;
+        // if (id === 'StartDate') {
+        //     reqData.StartDate = value;
+        //     getFilterOptions();
+        // }
+        switch (id) {
+            case 'StartDate':
+                reqData.StartDate = value;
+                getFilterOptions();
+                console.log(filterOptions);
+
+                break;
+            case 'EndDate':
+                reqData.EndDate = value;
+                getFilterOptions();
+                console.log(filterOptions);
+
+                break;
+            case 'Agency':
+                reqData.AgencyId = value;
+                getFilterOptions();
+                console.log(filterOptions);
+
+                break;
+            case 'Cluster':
+                reqData.ClusterId = value.Clusterid;
+                getFilterOptions();
+                console.log(filterOptions);
+                break;
+
+            case 'City':
+                reqData.City = value;
+                getFilterOptions();
+                console.log(filterOptions);
+                break;
+            case 'LineId':
+                reqData.LineID = value;
+                getFilterOptions();
+                console.log(filterOptions);
+
+                break;
+            case 'LineType':
+                reqData.LineType = value;
+                getFilterOptions();
+                console.log(filterOptions);
+
+                break;
+            case 'linegroup':
+                reqData.linegroup = value.id;
+                getFilterOptions();
+                console.log(filterOptions);
+                break;
+            default:
+                break;
+        }
         setFilters(prevFilters => ({
             ...prevFilters,
             [id]: value
@@ -54,110 +117,111 @@ function Filters() {
         console.log('currentFilter:', filters);
     };
 
+    const getFilterOptions = async () => {
+        // const reqData = {
+        //     UserId: userId,
+        //     SelectChoice: 'Cities'
+        // };
+
+        // const body = {
+        //     userName: user,
+        //     password: password,
+        //     data: reqData
+        // };
+        reqData.SelectChoice = 'Cities';
+
+        console.log('URL:', `${url}/UserChoice`);
+        console.log('Тело запроса:', body);
+
+        try {
+            const response_cities = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                City: response_cities.data.ResData
+            }));
+
+            reqData.SelectChoice = 'Agency';
+            const response_agency = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                Agency: response_agency.data.ResData
+            }));
+
+            reqData.SelectChoice = 'Cluster';
+            const response_cluster = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                Cluster: response_cluster.data.ResData
+            }));
+
+            reqData.SelectChoice = 'SubCluster';
+            const response_subcluster = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                SubCluster: response_subcluster.data.ResData
+            }));
+
+            reqData.SelectChoice = 'LineType';
+            const response_linetype = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                LineType: response_linetype.data.ResData
+            }));
+
+            reqData.SelectChoice = 'LineID';
+            const response_lineid = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                LineID: response_lineid.data.ResData
+            }));
+
+            reqData.SelectChoice = 'linegroup';
+            const response_linegroup = await axios.post(`${url}/UsersChoice`, body, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                }
+            });
+            setFilterOptions((prev) => ({
+                ...prev,
+                linegroup: response_linegroup.data.ResData
+            }));
+        } catch (error) {
+            console.error('Ошибка при запросе:', error.response?.data || error.message);
+        }
+    };
+
     useEffect(() => {
-        const getFilterOptions = async () => {
-            const reqData = {
-                UserId: userId,
-                SelectChoice: 'Cities'
-            };
-
-            const body = {
-                userName: user,
-                password: password,
-                data: reqData
-            };
-
-            console.log('URL:', `${url}/UserChoice`);
-            console.log('Тело запроса:', body);
-
-            try {
-                const response_cities = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    City: response_cities.data.ResData
-                }));
-
-                reqData.SelectChoice = 'Agency';
-                const response_agency = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    Agency: response_agency.data.ResData
-                }));
-
-                reqData.SelectChoice = 'Cluster';
-                const response_cluster = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    Cluster: response_cluster.data.ResData
-                }));
-
-                reqData.SelectChoice = 'SubCluster';
-                const response_subcluster = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    SubCluster: response_subcluster.data.ResData
-                }));
-
-                reqData.SelectChoice = 'LineType';
-                const response_linetype = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    LineType: response_linetype.data.ResData
-                }));
-
-                reqData.SelectChoice = 'LineID';
-                const response_lineid = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    LineID: response_lineid.data.ResData
-                }));
-
-                reqData.SelectChoice = 'linegroup';
-                const response_linegroup = await axios.post(`${url}/UsersChoice`, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': '*/*'
-                    }
-                });
-                setFilterOptions((prev) => ({
-                    ...prev,
-                    linegroup: response_linegroup.data.ResData
-                }));
-            } catch (error) {
-                console.error('Ошибка при запросе:', error.response?.data || error.message);
-            }
-        };
-
         getFilterOptions();
         console.log('filterOptions:', filterOptions);
 
@@ -171,7 +235,7 @@ function Filters() {
                     <Form.Select value={filters.Agency} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
                         {filterOptions.Agency?.map((option, index) => (
-                            <option key={index} value={option}>{option.agency_name}</option>))}
+                            <option key={index} value={option.agency_id}>{option.agency_name}</option>))}
                     </Form.Select>
                 </Form.Group>
 
@@ -180,7 +244,7 @@ function Filters() {
                     <Form.Select value={filters.Cluster} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
                         {filterOptions.Cluster?.map((option, index) => (
-                            <option key={index} value={option}>{option.ClusterName}</option>))}
+                            <option key={index} value={option.Clusterid}>{option.ClusterName}</option>))}
                     </Form.Select>
                 </Form.Group>
 
@@ -189,7 +253,7 @@ function Filters() {
                     <Form.Select value={filters.City} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
                         {filterOptions.City?.map((option, index) => (
-                            <option key={index} value={option}>{option.CityName}</option>))}
+                            <option key={index} value={option.CityName}>{option.CityName}</option>))}
                     </Form.Select>
                 </Form.Group>
 
@@ -198,7 +262,7 @@ function Filters() {
                     <Form.Select value={filters.LineID} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
                         {filterOptions.LineID?.map((option, index) => (
-                            <option key={index} value={option}>{option.RouteNumber}</option>))}
+                            <option key={index} value={option.LineID}>{option.RouteNumber}</option>))}
                     </Form.Select>
                 </Form.Group>
 
@@ -213,7 +277,7 @@ function Filters() {
                         3 – בינעירוני 
                         */}
                         {filterOptions.LineType?.map((option, index) => (
-                            <option key={index} value={option}>{option.LineType}</option>))}
+                            <option key={index} value={option.LineType}>{option.LineType}</option>))}
                     </Form.Select>
                 </Form.Group>
 
@@ -222,7 +286,7 @@ function Filters() {
                     <Form.Select value={filters.linegroup} onChange={handleFiltersChange}>
                         <option value="">Выберите</option>
                         {filterOptions.linegroup?.map((option, index) => (
-                            <option key={index} value={option}>{option.descrip}</option>))}
+                            <option key={index} value={option.id}>{option.descrip}</option>))}
                     </Form.Select>
                 </Form.Group>
 
