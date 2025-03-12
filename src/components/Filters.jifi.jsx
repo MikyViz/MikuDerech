@@ -9,45 +9,32 @@ function Filters() {
     const userId = import.meta.env.VITE_USERID;
     const user = import.meta.env.VITE_USER;
     const password = import.meta.env.VITE_PASSWORD;
+    
+    const currentDate = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(currentDate.getMonth() - 3);
 
-    const formatDate = (date) => date.toISOString().split('T')[0];
     const [filterOptions, setFilterOptions] = useState({});
     const [filters, setFilters] = useState({
         Agency: '', Cluster: '', SubCluster: '', City: '', LineID: '',
         LineType: '', linegroup: '',
-        StartDate: formatDate(new Date(globalState.currentFilter.StartDate)),
-        EndDate: formatDate(new Date(globalState.currentFilter.EndDate))
+        StartDate: threeMonthsAgo.toISOString().split('T')[0],
+        EndDate: currentDate.toISOString().split('T')[0]
     });
-
-    const filterKeyMapping = {
-        Agency: 'agency_id',
-        Cluster: 'Clusterid',
-        SubCluster: 'ClusterSubDesc',
-        City: 'CityName',
-        LineID: 'LineID',
-        LineType: 'LineType',
-        linegroup: 'LineID'
-    };
 
     const [allData, setAllData] = useState([]);
 
     const fetchFilterData = useCallback(async () => {
         try {
-            const data = await fetch(`${url}/UsersChoice`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userName: user,
-                    password,
-                    data: { UserId: userId, SelectChoice: 'All' }
-                })
+            const { data } = await axios.post(`${url}/UsersChoice`, {
+                userName: user, password,
+                data: { UserId: userId, SelectChoice: 'All' }
+            }, {
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            const result = await data.json();
-            setAllData(result.ResData);
-            generateFilterOptions(result.ResData);
+            setAllData(data.ResData);
+            generateFilterOptions(data.ResData);
         } catch (error) {
             console.error('Ошибка при загрузке данных:', error.response?.data || error.message);
         }
@@ -69,30 +56,46 @@ function Filters() {
     };
 
     const handleFiltersChange = (e) => {
-        const { id, value } = e.target;
+    const { id, value } = e.target;
+    
+    // Обновляем выбранные фильтры
+    const updatedFilters = { ...filters, [id]: value };
 
-        // Обновляем выбранные фильтры
-        const updatedFilters = { ...filters, [id]: value };
+    // Фильтруем данные, оставляя только соответствующие всем выбранным фильтрам
+    const filteredData = allData.filter(item =>
+        Object.entries(updatedFilters).every(([key, val]) => {
+            if (!val) return true; // Если значение фильтра не выбрано - пропускаем
+            return item[key] === val;
+        })
+    );
 
-        // Фильтруем данные, оставляя только соответствующие всем выбранным фильтрам
-        const filteredData = allData.filter(item =>
-            Object.entries(updatedFilters).every(([key, val]) => {
-                if (!val) return true; // фильтр не выбран
-                // Получаем реальное название поля из мэппинга или используем key по умолчанию
-                const dataKey = filterKeyMapping[key] || key;
-                return String(item[dataKey]) === String(val);
-            })
-        );
-
-        console.log('filteredData:', filteredData);
-        
-        const optionsData = filteredData.length > 0 ? filteredData : allData;
-        generateFilterOptions(optionsData);
-        setFilters(updatedFilters);
+    // Пересчитываем доступные опции для всех фильтров
+    const newFilterOptions = {
+        City: [...new Set(filteredData.map(item => item.CityName))],
+        Agency: [...new Set(filteredData.map(item => item.agency_name))],
+        Cluster: [...new Set(filteredData.map(item => item.ClusterName))],
+        SubCluster: [...new Set(filteredData.map(item => item.ClusterSubDesc))],
+        LineID: [...new Set(filteredData.map(item => item.LineID))],
+        LineType: [...new Set(filteredData.map(item => item.LineType))],
+        linegroup: [...new Set(filteredData.map(item => item.RouteNumber))],
     };
 
+    // Оставляем выбранные фильтры, только если они есть в новых данных
+    const validatedFilters = Object.keys(updatedFilters).reduce((acc, key) => {
+        if (!updatedFilters[key] || newFilterOptions[key].includes(updatedFilters[key])) {
+            acc[key] = updatedFilters[key];
+        } else {
+            acc[key] = ''; // Если опции больше нет в новых данных - сбрасываем её
+        }
+        return acc;
+    }, {});
 
+    setFilters(validatedFilters);
+    setFilterOptions(newFilterOptions);
+};
 
+    
+    
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -117,9 +120,9 @@ function Filters() {
                         <Form.Select value={filters[id]} onChange={handleFiltersChange}>
                             <option value="">Выберите</option>
                             {filterOptions[id]?.map((option, index) => (
-                                <option key={`${index}`} value={option[key]}>
-                                    {option[text]}
-                                </option>
+                                <option key={`${id}-${option[key]}`} value={option[key]}>
+    {option[text]}
+</option>
                             ))}
                         </Form.Select>
                     </Form.Group>
@@ -129,7 +132,7 @@ function Filters() {
                     <Form.Label>מתאריך:</Form.Label>
                     <Form.Control type="date" value={filters.StartDate} onChange={handleFiltersChange} />
                 </Form.Group>
-
+                
                 <Form.Group as={Col} controlId="EndDate">
                     <Form.Label>עד תאריך:</Form.Label>
                     <Form.Control type="date" value={filters.EndDate} onChange={handleFiltersChange} />

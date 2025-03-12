@@ -83,7 +83,7 @@ export default function Charts(props) {
                         <YAxis />
                         <Tooltip />
                         {keys.map((key, i) => (
-                            <Area type="monotone" dataKey={key} stackId={i} stroke={colors[i]} fill={colors[colors.length - i]} />
+                            <Area key={i} type="monotone" dataKey={key} stackId={i} stroke={colors[i]} fill={colors[colors.length - i]} />
                         ))
                         }
                     </AreaChart>
