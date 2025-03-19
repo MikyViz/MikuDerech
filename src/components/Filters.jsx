@@ -1,149 +1,151 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Form, Row, Col, Button } from 'react-bootstrap';
-import { GlobalStateContext } from '../GlobalStateProvider';
+
+// Функция для получения уникальных значений по ключу
+const getUniqueValues = (array, key) => {
+  return [...new Set(array.map(item => item[key]))];
+};
 
 function Filters() {
-    const { globalState, setGlobalState } = useContext(GlobalStateContext);
-    const url = import.meta.env.VITE_URL;
-    const userId = import.meta.env.VITE_USERID;
-    const user = import.meta.env.VITE_USER;
-    const password = import.meta.env.VITE_PASSWORD;
+  const url = import.meta.env.VITE_URL;
+  const userId = import.meta.env.VITE_USERID;
+  const user = import.meta.env.VITE_USER;
+  const password = import.meta.env.VITE_PASSWORD;
 
-    const formatDate = (date) => date.toISOString().split('T')[0];
-    const [filterOptions, setFilterOptions] = useState({});
-    const [filters, setFilters] = useState({
-        Agency: '', Cluster: '', SubCluster: '', City: '', LineID: '',
-        LineType: '', linegroup: '',
-        StartDate: formatDate(new Date(globalState.currentFilter.StartDate)),
-        EndDate: formatDate(new Date(globalState.currentFilter.EndDate))
-    });
+  // Состояния для данных, фильтров и опций селектов
+  const [allData, setAllData] = useState([]);
+  const [allFilters, setAllFilters] = useState({
+    Agency: [],
+    Cluster: [],
+    SubCluster: [],
+    City: [],
+    LineID: [],
+    LineType: [],
+    linegroup: []
+  });
+  const [filterOfFilter, setFilterOfFilter] = useState({
+    Agency: '',
+    Cluster: '',
+    SubCluster: '',
+    City: '',
+    LineID: '',
+    LineType: '',
+    linegroup: ''
+  });
+  const [filteredFilters, setFilteredFilters] = useState([]);
 
-    const filterKeyMapping = {
-        Agency: 'agency_id',
-        Cluster: 'Clusterid',
-        SubCluster: 'ClusterSubDesc',
-        City: 'CityName',
-        LineID: 'LineID',
-        LineType: 'LineType',
-        linegroup: 'LineID'
-    };
+  // Запрашиваем данные с сервера и генерируем начальные опции
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await axios.post(
+        `${url}/UsersChoice`,
+        {
+          userName: user,
+          password,
+          data: { UserId: userId, SelectChoice: 'All' }
+        },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      const resData = response.data.ResData;
+      setAllData(resData);
+      setAllFilters({
+        Agency: getUniqueValues(resData, 'agency_name'),
+        Cluster: getUniqueValues(resData, 'ClusterName'),
+        SubCluster: getUniqueValues(resData, 'ClusterSubDesc'),
+        City: getUniqueValues(resData, 'CityName'),
+        LineID: getUniqueValues(resData, 'LineID'),
+        LineType: getUniqueValues(resData, 'LineType'),
+        linegroup: getUniqueValues(resData, 'RouteNumber')
+      });
+      setFilteredFilters(resData);
+    } catch (error) {
+      console.error('Ошибка при загрузке данных:', error.response?.data || error.message);
+    }
+  }, [url, user, password, userId]);
 
-    const [allData, setAllData] = useState([]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    const fetchFilterData = useCallback(async () => {
-        try {
-            const data = await fetch(`${url}/UsersChoice`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userName: user,
-                    password,
-                    data: { UserId: userId, SelectChoice: 'All' }
-                })
-            });
-
-            const result = await data.json();
-            setAllData(result.ResData);
-            generateFilterOptions(result.ResData);
-        } catch (error) {
-            console.error('Ошибка при загрузке данных:', error.response?.data || error.message);
-        }
-    }, [url, user, password, userId]);
-
-    useEffect(() => { fetchFilterData(); }, [fetchFilterData]);
-
-    const generateFilterOptions = (data) => {
-        const unique = (key) => [...new Map(data.map(item => [item[key], item])).values()];
-        setFilterOptions({
-            Agency: unique('agency_id'),
-            Cluster: unique('Clusterid'),
-            SubCluster: unique('ClusterSubDesc'),
-            City: unique('CityName'),
-            LineID: unique('LineID'),
-            LineType: unique('LineType'),
-            linegroup: unique('LineID')
-        });
-    };
-
-    const handleFiltersChange = (e) => {
-        const { id, value } = e.target;
-
-        // Обновляем выбранные фильтры
-        const updatedFilters = { ...filters, [id]: value };
-
-        // Фильтруем данные, оставляя только соответствующие всем выбранным фильтрам
-        const filteredData = allData.filter(item =>
-            Object.entries(updatedFilters).every(([key, val]) => {
-                if (!val) return true; // фильтр не выбран
-                // Получаем реальное название поля из мэппинга или используем key по умолчанию
-                const dataKey = filterKeyMapping[key] || key;
-                return String(item[dataKey]) === String(val);
-            })
-        );
-
-        console.log('filteredData:', filteredData);
-        
-        const optionsData = filteredData.length > 0 ? filteredData : allData;
-        generateFilterOptions(optionsData);
-        setFilters(updatedFilters);
-    };
-
-
-
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (Object.values(filters).every(val => val === '')) return;
-        setGlobalState(prev => ({ ...prev, filters: [...prev.filters, filters], currentFilter: filters }));
-    };
-
-    return (
-        <Form onSubmit={handleSubmit}>
-            <Row className="align-items-center">
-                {[
-                    { id: "Agency", label: "מפעיל", key: "agency_id", text: "agency_name" },
-                    { id: "Cluster", label: "אשכול (אזורים)", key: "Clusterid", text: "ClusterName" },
-                    { id: "SubCluster", label: "תת אשכול", key: "ClusterSubDesc", text: "ClusterSubDesc" },
-                    { id: "City", label: "עיר", key: "CityName", text: "CityName" },
-                    { id: "LineID", label: "קו", key: "LineID", text: "RouteNumber" },
-                    { id: "LineType", label: "סוג קו", key: "LineType", text: "LineType" },
-                    { id: "linegroup", label: "קבוצת קווים", key: "id", text: "descrip" }
-                ].map(({ id, label, key, text }) => (
-                    <Form.Group as={Col} controlId={id} key={id}>
-                        <Form.Label>{label}:</Form.Label>
-                        <Form.Select value={filters[id]} onChange={handleFiltersChange}>
-                            <option value="">Выберите</option>
-                            {filterOptions[id]?.map((option, index) => (
-                                <option key={`${index}`} value={option[key]}>
-                                    {option[text]}
-                                </option>
-                            ))}
-                        </Form.Select>
-                    </Form.Group>
-                ))}
-
-                <Form.Group as={Col} controlId="StartDate">
-                    <Form.Label>מתאריך:</Form.Label>
-                    <Form.Control type="date" value={filters.StartDate} onChange={handleFiltersChange} />
-                </Form.Group>
-
-                <Form.Group as={Col} controlId="EndDate">
-                    <Form.Label>עד תאריך:</Form.Label>
-                    <Form.Control type="date" value={filters.EndDate} onChange={handleFiltersChange} />
-                </Form.Group>
-
-                <Col>
-                    <Button variant="primary" type="submit" className="mt-4" disabled={Object.values(filters).every(value => value === '')}>
-                        סנן
-                    </Button>
-                </Col>
-            </Row>
-            <hr />
-        </Form>
+  // Обновляем опции фильтров на основе выбранных значений
+  const updateFilterOptions = (updatedFilters) => {
+    const filteredData = allData.filter(item =>
+      Object.entries(updatedFilters).every(([key, val]) => {
+        if (!val) return true;
+        const mapping = {
+          Agency: 'agency_name',
+          Cluster: 'ClusterName',
+          SubCluster: 'ClusterSubDesc',
+          City: 'CityName',
+          LineID: 'LineID',
+          LineType: 'LineType',
+          linegroup: 'RouteNumber'
+        };
+        const dataKey = mapping[key] || key;
+        return String(item[dataKey]).trim() === String(val).trim();
+      })
     );
+
+    setFilteredFilters(filteredData);
+
+    setAllFilters({
+      Agency: getUniqueValues(filteredData, 'agency_name'),
+      Cluster: getUniqueValues(filteredData, 'ClusterName'),
+      SubCluster: getUniqueValues(filteredData, 'ClusterSubDesc'),
+      City: getUniqueValues(filteredData, 'CityName'),
+      LineID: getUniqueValues(filteredData, 'LineID'),
+      LineType: getUniqueValues(filteredData, 'LineType'),
+      linegroup: getUniqueValues(filteredData, 'RouteNumber')
+    });
+  };
+
+  // При изменении любого фильтра – обновляем selected values и опции
+  const handleFilterChange = (e) => {
+    const { id, value } = e.target;
+    const updatedFilters = { ...filterOfFilter, [id]: value };
+    setFilterOfFilter(updatedFilters);
+    updateFilterOptions(updatedFilters);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Здесь можно добавить логику для обработки отправки формы
+  };
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      <Row className="align-items-center">
+        {[
+          { id: "Agency", label: "מפעיל" },
+          { id: "Cluster", label: "אשכול (אזורים)" },
+          { id: "SubCluster", label: "תת אשכול" },
+          { id: "City", label: "עיר" },
+          { id: "LineID", label: "קו" },
+          { id: "LineType", label: "סוג קו" },
+          { id: "linegroup", label: "קבוצת קווים" }
+        ].map(({ id, label }) => (
+          <Form.Group as={Col} controlId={id} key={id}>
+            <Form.Label>{label}:</Form.Label>
+            <Form.Select value={filterOfFilter[id]} onChange={handleFilterChange}>
+              <option value="">Выберите</option>
+              {allFilters[id]?.map((option, index) => (
+                <option key={`${id}-${index}`} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+        ))}
+        <Col>
+          <Button variant="primary" type="submit" className="mt-4">
+            Сохранить
+          </Button>
+        </Col>
+      </Row>
+      <hr />
+    </Form>
+  );
 }
 
 export default Filters;
